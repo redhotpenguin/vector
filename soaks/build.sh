@@ -3,7 +3,7 @@
 set -o errexit
 set -o pipefail
 set -o nounset
-set -o xtrace
+#set -o xtrace
 
 # We need to build two copies of vector with the same flags, one for the
 # baseline SHA and the other for current. Baseline is either 'master' or
@@ -22,9 +22,7 @@ display_usage() {
 build_vector() {
     TARGET="target/release/vector"
     IMAGE="vector:${1}-${FEATURE_SHA}"
-    pwd
     pushd ../
-    pwd
     git checkout "$1"
     podman build --ignorefile "${__dir}/Dockerfile.ignore" --file "${__dir}/Dockerfile" --build-arg=VECTOR_FEATURES="${FEATURES}" --tag "${IMAGE}" .
     popd
