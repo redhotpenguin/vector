@@ -24,7 +24,7 @@ build_vector() {
     IMAGE="vector:${1}-${FEATURE_SHA}"
     pushd ../
     git checkout "$1"
-    podman build --ignorefile "${__dir}/Dockerfile.ignore" --file "${__dir}/Dockerfile" --build-arg=VECTOR_FEATURES="${FEATURES}" --tag "${IMAGE}" .
+    docker build --ignorefile "${__dir}/Dockerfile.ignore" --file "${__dir}/Dockerfile" --build-arg=VECTOR_FEATURES="${FEATURES}" --tag "${IMAGE}" .
     popd
 }
 
