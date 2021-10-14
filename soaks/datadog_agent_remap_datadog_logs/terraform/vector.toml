@@ -38,12 +38,13 @@ if err == null {
 [sinks.prometheus]
 type = "prometheus_exporter"
 inputs = ["internal_metrics"]
-address = "0.0.0.0:9598"
+address = "0.0.0.0:9090"
 
 [sinks.datadog_logs]
 type = "datadog_logs"
 inputs = ["parse_message"]
-default_api_key = "${DATADOG_API_KEY_ENV_VAR}"
+endpoint = "http://http-blackhole.lading.svc.cluster.local:8080"
+default_api_key = "DEADBEEF"
 
 buffer.type = "memory"
 buffer.max_events = 50000 # buffer 50 payloads at a time
