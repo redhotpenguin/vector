@@ -123,12 +123,12 @@ resource "kubernetes_deployment" "prometheus" {
 
           resources {
             limits = {
-              cpu    = "500m"
-              memory = "256Mi"
+              cpu    = "100m"
+              memory = "128Mi"
             }
             requests = {
-              cpu    = "500m"
-              memory = "256Mi"
+              cpu    = "100m"
+              memory = "128Mi"
             }
           }
 

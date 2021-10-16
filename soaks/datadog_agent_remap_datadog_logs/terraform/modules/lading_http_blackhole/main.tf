@@ -1,28 +1,23 @@
-resource "kubernetes_namespace" "lading" {
-  metadata {
-    name = "lading"
-  }
-}
-
 resource "kubernetes_config_map" "lading" {
   metadata {
-    name      = "lading"
-    namespace = kubernetes_namespace.lading.metadata[0].name
+    name      = "lading-http-blackhole"
+    namespace = var.namespace
   }
 
   data = {
-    "http_gen.toml" =  "${file("${path.module}/http_gen.toml")}"
+    "http_blackhole.toml" = var.http-blackhole-toml
   }
 }
 
-resource "kubernetes_service" "http-gen" {
+resource "kubernetes_service" "http-blackhole" {
   metadata {
-    name      = "http-gen"
-    namespace = kubernetes_namespace.lading.metadata[0].name
+    name      = "http-blackhole"
+    namespace = var.namespace
   }
   spec {
     selector = {
-      app = "http-gen"
+      app = "http-blackhole"
+      type = var.type
     }
     session_affinity = "ClientIP"
     port {
@@ -35,17 +30,17 @@ resource "kubernetes_service" "http-gen" {
       port        = 9090
       target_port = 9090
     }
-    type = "ClusterIP"
+    type = "LoadBalancer"
   }
 }
 
-
-resource "kubernetes_deployment" "http-gen" {
+resource "kubernetes_deployment" "http-blackhole" {
   metadata {
-    name      = "http-gen"
-    namespace = kubernetes_namespace.lading.metadata[0].name
+    name      = "http-blackhole"
+    namespace = var.namespace
     labels = {
-      app = "http-gen"
+      app = "http-blackhole"
+      type = var.type
     }
   }
 
@@ -54,14 +49,16 @@ resource "kubernetes_deployment" "http-gen" {
 
     selector {
       match_labels = {
-        app = "http-gen"
+        app = "http-blackhole"
+        type = var.type
       }
     }
 
     template {
       metadata {
         labels = {
-          app = "http-gen"
+          app = "http-blackhole"
+          type = var.type
         }
         annotations = {
           "prometheus.io/scrape" = true
@@ -75,8 +72,8 @@ resource "kubernetes_deployment" "http-gen" {
         container {
           image_pull_policy = "IfNotPresent"
           image             = "ghcr.io/blt/lading:0.5.0"
-          name              = "http-gen"
-          command = ["/http_gen"]
+          name              = "http-blackhole"
+          command = ["/http_blackhole"]
 
           volume_mount {
             mount_path = "/etc/lading"
@@ -86,12 +83,12 @@ resource "kubernetes_deployment" "http-gen" {
 
           resources {
             limits = {
-              cpu    = "1"
-              memory = "512Mi"
+              cpu    = "100m"
+              memory = "32Mi"
             }
             requests = {
-              cpu    = "1"
-              memory = "512Mi"
+              cpu    = "100m"
+              memory = "32Mi"
             }
           }
 

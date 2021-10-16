@@ -1,51 +1,41 @@
-resource "kubernetes_namespace" "lading" {
-  metadata {
-    name = "lading"
-  }
-}
-
 resource "kubernetes_config_map" "lading" {
   metadata {
-    name      = "lading"
-    namespace = kubernetes_namespace.lading.metadata[0].name
+    name      = "lading-http-gen"
+    namespace = var.namespace
   }
 
   data = {
-    "http_gen.toml" =  "${file("${path.module}/http_gen.toml")}"
+    "http_gen.toml" = var.http-gen-toml
   }
 }
 
 resource "kubernetes_service" "http-gen" {
   metadata {
     name      = "http-gen"
-    namespace = kubernetes_namespace.lading.metadata[0].name
+    namespace = var.namespace
   }
   spec {
     selector = {
       app = "http-gen"
+        type = var.type
     }
     session_affinity = "ClientIP"
-    port {
-      name        = "datadog-agent"
-      port        = 8080
-      target_port = 8080
-    }
     port {
       name        = "prom-export"
       port        = 9090
       target_port = 9090
     }
-    type = "ClusterIP"
+    type = "LoadBalancer"
   }
 }
-
 
 resource "kubernetes_deployment" "http-gen" {
   metadata {
     name      = "http-gen"
-    namespace = kubernetes_namespace.lading.metadata[0].name
+    namespace = var.namespace
     labels = {
       app = "http-gen"
+      type = var.type
     }
   }
 
@@ -55,6 +45,7 @@ resource "kubernetes_deployment" "http-gen" {
     selector {
       match_labels = {
         app = "http-gen"
+        type = var.type
       }
     }
 
@@ -62,6 +53,7 @@ resource "kubernetes_deployment" "http-gen" {
       metadata {
         labels = {
           app = "http-gen"
+          type = var.type
         }
         annotations = {
           "prometheus.io/scrape" = true
@@ -95,10 +87,6 @@ resource "kubernetes_deployment" "http-gen" {
             }
           }
 
-          port {
-            container_port = 8080
-            name           = "listen"
-          }
           port {
             container_port = 9090
             name           = "prom-export"

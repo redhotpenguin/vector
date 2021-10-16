@@ -1,30 +1,31 @@
 resource "kubernetes_namespace" "vector" {
   metadata {
-    name = "vector"
+    name = "vector-${var.type}"
   }
 }
 
 resource "kubernetes_config_map" "vector" {
   metadata {
-    name      = "vector"
+    name = "vector"
     namespace = kubernetes_namespace.vector.metadata[0].name
   }
 
   data = {
-    "vector.toml" = "${file("${path.module}/vector.toml")}"
+    "vector.toml" = var.vector-toml
   }
 }
 
 resource "kubernetes_service" "vector" {
   metadata {
-    name      = "vector"
+    name = "vector"
     namespace = kubernetes_namespace.vector.metadata[0].name
   }
   spec {
     selector = {
+      type = var.type
       soak_test   = kubernetes_deployment.vector.metadata.0.labels.soak_test
       sha         = kubernetes_deployment.vector.metadata.0.labels.sha
-      feature_sha = kubernetes_deployment.vector.metadata.0.labels.feature_sha
+      feature_hash = kubernetes_deployment.vector.metadata.0.labels.feature_hash
     }
     session_affinity = "ClientIP"
     port {
@@ -44,12 +45,13 @@ resource "kubernetes_service" "vector" {
 
 resource "kubernetes_deployment" "vector" {
   metadata {
-    name      = "vector"
+    name = "vector"
     namespace = kubernetes_namespace.vector.metadata[0].name
     labels = {
-      soak_test   = "foobar"
-      sha         = "2foobar"
-      feature_sha = "bingbang"
+        type = var.type
+        soak_test   = var.test_name
+        sha         = var.sha
+        feature_hash = var.feature_hash
     }
   }
 
@@ -58,18 +60,20 @@ resource "kubernetes_deployment" "vector" {
 
     selector {
       match_labels = {
-        soak_test   = "foobar"
-        sha         = "2foobar"
-        feature_sha = "bingbang"
+        type = var.type
+        soak_test   = var.test_name
+        sha         = var.sha
+        feature_hash = var.feature_hash
       }
     }
 
     template {
       metadata {
         labels = {
-          soak_test   = "foobar"
-          sha         = "2foobar"
-          feature_sha = "bingbang"
+        type = var.type
+        soak_test   = var.test_name
+        sha         = var.sha
+        feature_hash = var.feature_hash
         }
         annotations = {
           "prometheus.io/scrape" = true
@@ -82,7 +86,7 @@ resource "kubernetes_deployment" "vector" {
         automount_service_account_token = false
         container {
           image_pull_policy = "IfNotPresent"
-          image             = "vector:e4805b823ae5df1bc19307a22d856627f4e57e91-4f5ab2fb2f82b57a23076b9db90bcd2e335c0f0b"
+          image             = "vector:${var.sha}-${var.feature_hash}"
           name              = "vector"
 
           volume_mount {
@@ -98,11 +102,11 @@ resource "kubernetes_deployment" "vector" {
 
           resources {
             limits = {
-              cpu    = "4"
+              cpu    = "2"
               memory = "512Mi"
             }
             requests = {
-              cpu    = "4"
+              cpu    = "2"
               memory = "512Mi"
             }
           }
